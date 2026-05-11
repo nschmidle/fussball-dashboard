@@ -26,5 +26,5 @@ EXPOSE 8080
 # DB-Pfad als Volume (muss vom Host eingebunden werden)
 VOLUME /app/bundesliga.db
 
-# Start
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8080"]
+# Start (Scraper läuft bei jedem Start, aktualisiert die DB)
+CMD ["sh", "-c", "python3 scraper.py && uvicorn server:app --host 0.0.0.0 --port 8080"]

@@ -107,8 +107,7 @@ docker run -d \
   fussball-dashboard
 ```
 
-Die Datenbank liegt auf dem Host und bleibt beim Neustart des Containers erhalten.
-Zum Aktualisieren einfach `python3 scraper.py` auf dem Host ausführen und Container neustarten.
+Die Datenbank liegt auf dem Host und wird bei jedem Container-Start automatisch aktualisiert (der Scraper läuft vor dem Server).
 
 ### docker-compose.yml (optional)
 
