@@ -1,6 +1,8 @@
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import requests
 from fastapi import FastAPI, Depends, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -177,6 +179,48 @@ async def get_stats(league: str = "bl1", db: AsyncSession = Depends(get_db)):
         },
         "top_scorers": [{"scorer": r.scorer, "goals": r.goals} for r in scorers],
     }
+
+
+LIVE_LEAGUES = {"bl1": "1. Bundesliga", "bl2": "2. Bundesliga", "dfb": "DFB-Pokal", "ucl": "Champions League", "uel": "Europa League"}
+
+
+@app.get("/api/live")
+async def get_live():
+    results = []
+    for shortcut, name in LIVE_LEAGUES.items():
+        try:
+            resp = await asyncio.to_thread(
+                requests.get, f"https://api.openligadb.de/getmatchdata/{shortcut}", timeout=10
+            )
+            resp.raise_for_status()
+            matches = resp.json()
+        except Exception:
+            continue
+
+        for m in matches:
+            goals = [
+                {
+                    "goal_id": g["goalID"],
+                    "scorer": g["goalGetterName"],
+                    "minute": g["matchMinute"],
+                    "score1": g["scoreTeam1"],
+                    "score2": g["scoreTeam2"],
+                }
+                for g in m.get("goals", [])
+            ]
+            results.append({
+                "league": name,
+                "league_shortcut": shortcut,
+                "match_id": m["matchID"],
+                "matchday": m["group"]["groupName"],
+                "team1": m["team1"]["teamName"],
+                "team2": m["team2"]["teamName"],
+                "score1": m["matchResults"][-1]["pointsTeam1"] if m["matchResults"] else None,
+                "score2": m["matchResults"][-1]["pointsTeam2"] if m["matchResults"] else None,
+                "finished": m["matchIsFinished"],
+                "goals": goals,
+            })
+    return results
 
 
 # Static frontend als Fallback (muss nach API-Routen sein)

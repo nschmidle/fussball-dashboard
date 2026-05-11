@@ -6,12 +6,14 @@ import Dashboard from './views/Dashboard.vue'
 import MatchesView from './views/MatchesView.vue'
 import StandingsView from './views/StandingsView.vue'
 import StatsView from './views/StatsView.vue'
+import LiveView from './views/LiveView.vue'
 
 const routes = [
   { path: '/', component: Dashboard },
   { path: '/matches', component: MatchesView },
   { path: '/standings', component: StandingsView },
   { path: '/stats', component: StatsView },
+  { path: '/live', component: LiveView },
 ]
 
 const router = createRouter({

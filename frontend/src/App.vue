@@ -8,6 +8,7 @@
           <router-link class="nav-link" to="/matches">Spiele</router-link>
           <router-link class="nav-link" to="/standings">Tabelle</router-link>
           <router-link class="nav-link" to="/stats">Statistiken</router-link>
+          <router-link class="nav-link" to="/live">⚡ Live</router-link>
         </div>
       </div>
     </nav>
