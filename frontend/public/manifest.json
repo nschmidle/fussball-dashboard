@@ -1,0 +1,12 @@
+{
+  "name": "Fußball Dashboard",
+  "short_name": "⚽ Fußball",
+  "description": "Live-Ergebnisse, Tabellen und Statistiken für Bundesliga, Champions League und mehr",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#212529",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

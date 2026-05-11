@@ -5,3 +5,4 @@ __pycache__/
 .DS_Store
 *.db
 known_goals.json
+vapid_keys.json

@@ -2,9 +2,13 @@
   <div>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="mb-0">⚡ Live</h4>
-      <div>
-        <button class="btn btn-sm btn-outline-secondary me-2" @click="toggleNotify">
-          {{ notifyEnabled ? '🔔 Benachrichtigungen an' : '🔕 Benachrichtigungen aus' }}
+      <div class="d-flex gap-2 align-items-center">
+        <button v-if="pushSupported && !pushSubscribed" class="btn btn-sm btn-outline-primary" @click="subscribePush">
+          📲 Push aktivieren
+        </button>
+        <span v-else-if="pushSubscribed" class="badge bg-success">Push an</span>
+        <button class="btn btn-sm btn-outline-secondary" @click="toggleNotify">
+          {{ notifyEnabled ? '🔔 an' : '🔕 aus' }}
         </button>
         <small class="text-muted">alle 30s</small>
       </div>
@@ -67,6 +71,8 @@ import { api } from '../api.js'
 const liveData = ref([])
 const error = ref('')
 const notifyEnabled = ref(false)
+const pushSupported = ref('serviceWorker' in navigator && 'PushManager' in window)
+const pushSubscribed = ref(false)
 
 const leagueNames = {
   bl1: '1. Bundesliga',
@@ -140,6 +146,32 @@ function showNotification(goal, match) {
   }
 }
 
+async function subscribePush() {
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const resp = await api('/api/push/vapid-key')
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(resp.public_key),
+    })
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub.toJSON()),
+    })
+    pushSubscribed.value = true
+  } catch (e) {
+    console.error('Push subscription failed:', e)
+  }
+}
+
+function urlBase64ToUint8Array(base64) {
+  const padding = '='.repeat((4 - base64.length % 4) % 4)
+  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(b64)
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)))
+}
+
 function toggleNotify() {
   notifyEnabled.value = !notifyEnabled.value
   if (notifyEnabled.value && 'Notification' in window && Notification.permission === 'default') {
@@ -147,10 +179,15 @@ function toggleNotify() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadKnownGoals()
   poll()
   pollTimer = setInterval(poll, 30000)
+  if (pushSupported.value) {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    pushSubscribed.value = !!sub
+  }
 })
 
 onUnmounted(() => {

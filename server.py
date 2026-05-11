@@ -3,13 +3,18 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import requests
-from fastapi import FastAPI, Depends, Query
+from fastapi import FastAPI, Depends, Query, Request
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from pywebpush import webpush, WebPushException
 
 from database import get_db, engine
-from models import Match, Goal
+from models import Match, Goal, PushSubscription
 from schemas import LeagueOut, MatchOut, StandingRow
+
+VAPID_PRIVATE = None
+VAPID_PUBLIC = None
+VAPID_CLAIMS = None
 
 
 @asynccontextmanager
@@ -21,6 +26,69 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Fußball Dashboard", version="2.0.0", lifespan=lifespan)
+
+
+def init_vapid():
+    global VAPID_PRIVATE, VAPID_PUBLIC, VAPID_CLAIMS
+    from cryptography.fernet import Fernet
+    from py_vapid import Vapid
+    v = Vapid()
+    try:
+        v.load("vapid_keys.json")
+    except Exception:
+        v.generate_keys()
+        v.save("vapid_keys.json")
+    VAPID_PRIVATE = v.private_key
+    VAPID_PUBLIC = v.public_key
+    VAPID_CLAIMS = {"sub": "mailto:nschmidle@web.de"}
+
+
+@app.on_event("startup")
+async def startup():
+    init_vapid()
+
+
+@app.get("/api/push/vapid-key")
+async def push_vapid_key():
+    return {"public_key": VAPID_PUBLIC}
+
+
+@app.post("/api/push/subscribe")
+async def push_subscribe(request: Request, db: AsyncSession = Depends(get_db)):
+    body = await request.json()
+    sub = PushSubscription(
+        endpoint=body["endpoint"],
+        p256dh=body["keys"]["p256dh"],
+        auth=body["keys"]["auth"],
+    )
+    existing = await db.execute(
+        select(PushSubscription).where(PushSubscription.endpoint == body["endpoint"])
+    )
+    if not existing.scalar():
+        db.add(sub)
+        await db.commit()
+    return {"ok": True}
+
+
+@app.post("/api/push/test")
+async def push_test(db: AsyncSession = Depends(get_db)):
+    rows = await db.execute(select(PushSubscription))
+    subs = rows.scalars().all()
+    sent = 0
+    for s in subs:
+        try:
+            webpush(
+                subscription_info={"endpoint": s.endpoint, "keys": {"p256dh": s.p256dh, "auth": s.auth}},
+                data='{"title":"⚽ Test","body":"Push funktioniert!"}',
+                vapid_private_key=VAPID_PRIVATE,
+                vapid_claims=VAPID_CLAIMS,
+            )
+            sent += 1
+        except WebPushException:
+            if s.endpoint:
+                await db.delete(s)
+                await db.commit()
+    return {"sent": sent}
 
 
 @app.get("/api/leagues", response_model=list[LeagueOut])

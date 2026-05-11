@@ -29,3 +29,12 @@ class Goal(Base):
     minute = Column(Integer)
     score1 = Column(Integer)
     score2 = Column(Integer)
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    endpoint = Column(Text, unique=True)
+    p256dh = Column(Text)
+    auth = Column(Text)
