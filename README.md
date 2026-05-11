@@ -89,22 +89,36 @@ Im Live-Tab "🔔 an" aktivieren – Browser-Notifications bei jedem Tor, solang
 
 ### Docker
 
+#### Image bauen
+
 Der Build ist als **Multi-Stage-Dockerfile** ausgelegt:
 - Stage 1: Frontend-Build mit Node.js
 - Stage 2: Python-Runtime, nur das gebaute Frontend wird übernommen
 
 ```bash
-# Bauen
 docker build -t fussball-dashboard .
+```
 
+#### Von GitHub Container Registry (ghcr.io)
+
+Das Image liegt auf [ghcr.io](https://ghcr.io) (privat):
+
+```bash
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u <user> --password-stdin
+docker pull ghcr.io/nschmidle/fussball-dashboard:latest
+```
+
+#### Starten
+
+```bash
 # DB lokal erzeugen (falls nicht vorhanden)
 python3 scraper.py
 
-# Starten (DB als Volume)
+# Starten (DB als Volume, Scraper läuft automatisch beim Start)
 docker run -d \
   -p 8080:8080 \
   -v $(pwd)/bundesliga.db:/app/bundesliga.db \
-  fussball-dashboard
+  ghcr.io/nschmidle/fussball-dashboard:latest
 ```
 
 Die Datenbank liegt auf dem Host und wird bei jedem Container-Start automatisch aktualisiert (der Scraper läuft vor dem Server).
