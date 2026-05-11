@@ -1,0 +1,7 @@
+services:
+  app:
+    image: ghcr.io/nschmidle/fussball-dashboard:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./bundesliga.db:/app/bundesliga.db

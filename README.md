@@ -128,7 +128,7 @@ Die Datenbank liegt auf dem Host und wird bei jedem Container-Start automatisch 
 ```yaml
 services:
   app:
-    build: .
+    image: ghcr.io/nschmidle/fussball-dashboard:latest
     ports:
       - "8080:8080"
     volumes:
