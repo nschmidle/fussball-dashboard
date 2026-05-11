@@ -89,9 +89,37 @@ Im Live-Tab "🔔 an" aktivieren – Browser-Notifications bei jedem Tor, solang
 
 ### Docker
 
+Der Build ist als **Multi-Stage-Dockerfile** ausgelegt:
+- Stage 1: Frontend-Build mit Node.js
+- Stage 2: Python-Runtime, nur das gebaute Frontend wird übernommen
+
 ```bash
+# Bauen
 docker build -t fussball-dashboard .
-docker run -d -p 8080:8080 -v $(pwd)/bundesliga.db:/app/bundesliga.db fussball-dashboard
+
+# DB lokal erzeugen (falls nicht vorhanden)
+python3 scraper.py
+
+# Starten (DB als Volume)
+docker run -d \
+  -p 8080:8080 \
+  -v $(pwd)/bundesliga.db:/app/bundesliga.db \
+  fussball-dashboard
+```
+
+Die Datenbank liegt auf dem Host und bleibt beim Neustart des Containers erhalten.
+Zum Aktualisieren einfach `python3 scraper.py` auf dem Host ausführen und Container neustarten.
+
+### docker-compose.yml (optional)
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./bundesliga.db:/app/bundesliga.db
 ```
 
 ### Render (kostenlos)
@@ -105,13 +133,15 @@ docker run -d -p 8080:8080 -v $(pwd)/bundesliga.db:/app/bundesliga.db fussball-d
 ## Projektstruktur
 
 ```
+├── Dockerfile              ← Multi-Stage Build
+├── requirements.txt        ← Python-Dependencies
+├── .dockerignore
 ├── server.py              ← FastAPI-App + API-Routen
 ├── database.py            ← SQLAlchemy async Engine
 ├── models.py              ← DB-Modelle (Match, Goal, PushSubscription)
 ├── schemas.py             ← Pydantic-Response-Schemata
 ├── scraper.py             ← Datenimport von OpenLigaDB
 ├── bundesliga_watcher.py  ← Live-Tor-Alarm (Terminal + Windows Toast)
-├── requirements.txt       ← Python-Dependencies
 ├── frontend/
 │   ├── src/
 │   │   ├── App.vue        ← Navigation
