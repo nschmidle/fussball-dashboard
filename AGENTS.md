@@ -40,15 +40,37 @@
 | Classic PAT | `ghp_*` | write:packages + read:packages | Docker push (manuell) |
 | `GITHUB_TOKEN` | built-in | packages: write | GitHub Actions (automatisch) |
 
-- Fine-grained Token: in `.git/config` (URL-Rewriting, nur dieses Repo)
-- Classic PAT: in `~/.docker/config.json` (global, für docker login)
+- Fine-grained Token: in `pass` (GPG-verschlüsselt, Eintrag `fussball-dashboard/git`)
+- Classic PAT: in `pass` (GPG-verschlüsselt, Eintrag `fussball-dashboard/docker`)
 - GitHub Actions: nutzt automatisch `GITHUB_TOKEN`
+- Credential-Helper: Custom Bash-Scripts in `~/.local/bin/`
+  - `git-credential-pass` – liest Token aus `pass` für Git
+  - `docker-credential-pass` – liest Token aus `pass` für Docker
+- GPG-Key: `CC598F2A04284084A6B0CFF193DE3FCE215E854F`
+- Kein Klartext in Config-Dateien
+
+## Credential-Helper Scripts
+
+Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
+
+### `git-credential-pass`
+- Git ruft das Script automatisch bei `git push/pull` auf
+- Liest Token aus `pass show fussball-dashboard/git`
+- Konfiguriert in `.git/config`: `credential.https://github.com.helper`
+- Unterstützt: `get`, `store`, `erase`
+
+### `docker-credential-pass`
+- Docker ruft das Script automatisch bei `docker login/push` auf
+- Liest Token aus `pass show fussball-dashboard/docker`
+- Konfiguriert in `~/.docker/config.json`: `"credsStore": "pass"`
+- Unterstützt: `get`, `store`, `erase`, `list`
 
 ## Letzte Session (2026-07-18)
-- AGENTS.md vollständig aktualisiert
-- Docker-Image erfolgreich zu ghcr.io gepusht
-- GitHub-Auth via `gh auth` bestätigt
-- Token-Setup konfiguriert: Fine-grained (git) + Classic PAT (docker) + GITHUB_TOKEN (Actions)
+- Token-Setup auf `pass` (GPG) umgestellt
+- Custom Credential-Helper Scripts erstellt
+- Globaler `gh auth` Helper entfernt
+- `golang-docker-credential-helpers` deinstalliert
+- Git push + Docker push getestet
 - Workflow `.github/workflows/docker.yml` erstellt (automatischer Docker-Build bei Push zu main)
 
 ## TODOs
