@@ -111,13 +111,12 @@ docker pull ghcr.io/nschmidle/fussball-dashboard:latest
 #### Starten
 
 ```bash
-# DB lokal erzeugen (falls nicht vorhanden)
-python3 scraper.py
-
-# Starten (DB als Volume, Scraper läuft automatisch beim Start)
+# Starten (DB wird automatisch im data/ Verzeichnis angelegt)
+mkdir -p data
 docker run -d \
   -p 8080:8080 \
-  -v $(pwd)/bundesliga.db:/app/bundesliga.db \
+  -e DATABASE_PATH=/app/data/bundesliga.db \
+  -v $(pwd)/data:/app/data \
   ghcr.io/nschmidle/fussball-dashboard:latest
 ```
 
@@ -129,11 +128,12 @@ Die Datenbank liegt auf dem Host und wird bei jedem Container-Start automatisch 
 services:
   app:
     image: ghcr.io/nschmidle/fussball-dashboard:latest
-    platform: linux/arm64
     ports:
       - "8080:8080"
+    environment:
+      - DATABASE_PATH=/app/data/bundesliga.db
     volumes:
-      - ./bundesliga.db:/app/bundesliga.db
+      - ./data:/app/data
 ```
 
 ### Render (kostenlos)
@@ -174,7 +174,8 @@ services:
 │   ├── index.html
 │   ├── vite.config.js
 │   └── package.json
-└── bundesliga.db          ← SQLite-Datenbank
+└── data/
+    └── bundesliga.db       ← SQLite-Datenbank (wird automatisch angelegt)
 ```
 
 ## Daten aktualisieren
@@ -183,4 +184,4 @@ services:
 python3 scraper.py
 ```
 
-Überschreibt keine vorhandenen Einträge (INSERT OR IGNORE). Zum kompletten Neuladen einfach `bundesliga.db` löschen und erneut ausführen.
+Überschreibt keine vorhandenen Einträge (INSERT OR IGNORE). Zum kompletten Neuladen einfach `data/bundesliga.db` löschen und erneut ausführen.
