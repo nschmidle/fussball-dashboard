@@ -126,14 +126,37 @@ Die Datenbank liegt auf dem Host und wird bei jedem Container-Start automatisch 
 
 ```yaml
 services:
-  app:
+  ticker:
+    container_name: ticker
     image: ghcr.io/nschmidle/fussball-dashboard:latest
-    ports:
-      - "8080:8080"
+    restart: unless-stopped
+
     environment:
       - DATABASE_PATH=/app/data/bundesliga.db
     volumes:
       - ./data:/app/data
+
+    ports:
+      - "8085:8080"
+
+    networks:
+      - domain-public
+
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.ticker-http.entrypoints: "web"
+      traefik.http.routers.ticker-http.rule: "Host(`DOMAIN`)"
+      traefik.http.routers.ticker-http.middlewares: "ssl-header@file"
+      traefik.http.routers.ticker-https.entrypoints: "websecure"
+      traefik.http.routers.ticker-https.rule: "Host(`DOMAIN`)"
+      traefik.http.routers.ticker-https.middlewares: "ssl-header@file"
+      traefik.http.routers.ticker-https.tls: "true"
+      traefik.http.routers.ticker-https.tls.certresolver: "letencrypt"
+
+networks:
+  domain-public:
+    external: true
+    name: public-lan
 ```
 
 ### Render (kostenlos)
