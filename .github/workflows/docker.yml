@@ -35,3 +35,5 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ghcr.io/${{ github.repository }}:latest
+          provenance: false
+          sbom: false
