@@ -33,11 +33,10 @@
 - `docker build -t fussball-dashboard .`
 - Keine Lint-/Typecheck-Commands definiert
 
-## Letzte Session (2026-05-16)
-- Docker-Image für `linux/arm64` lokal gebaut (76.7 MB)
-- Push zu ghcr.io fehlgeschlagen – Token ohne Schreibrechte
-- Buildx-Builder `arm64builder` aktiv, QEMU-Emulation installiert
+## Letzte Session (2026-07-18)
+- AGENTS.md vollständig aktualisiert
+- Docker-Image erfolgreich zu ghcr.io gepusht (`ghcr.io/nschmidle/fussball-dashboard:latest`)
+- GitHub-Auth via `gh auth` (Token mit `write:packages`) bestätigt
 
 ## TODOs
-- [ ] Image pushen mit Token mit Schreibrechten (`docker push ghcr.io/nschmidle/fussball-dashboard:latest`)
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
