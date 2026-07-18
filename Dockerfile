@@ -1,5 +1,5 @@
 # ---- Stage 1: Frontend bauen (Node.js) ----
-FROM node:20-alpine AS frontend
+FROM node:24-alpine AS frontend
 WORKDIR /build
 COPY frontend/package*.json ./
 RUN npm ci --ignore-scripts
