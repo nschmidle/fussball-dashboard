@@ -4,7 +4,7 @@
 - **Fußball-Dashboard**: FastAPI (Python 3.12) + Vue 3 (Vite 6.4.3)
 - App-Version: 2.0.0
 - Datenquelle: OpenLigaDB API
-- DB: SQLite (`bundesliga.db`), als Volume gemountet
+- DB: SQLite (`bundesliga.db`), als Directory-Mount (`./data:/app/data`), Pfad via `DATABASE_PATH` env-Variable konfigurierbar (Default: `/app/bundesliga.db`)
 
 ## Ligen
 | Liga | Shortcut | Scraped | Live |
@@ -79,6 +79,12 @@ Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
 - Docker: Node 20-alpine → Node 24-alpine
 - Security: vite 6.4.2 → 6.4.3 (0 vulnerabilities)
 - Erster erfolgreicher CI-Build (#10)
+
+## Letzte Session (2026-07-19)
+- DB-Pfad-Fix: `VOLUME` aus Dockerfile entfernt
+- `database.py`: absoluter Pfad + `DATABASE_PATH` env-Variable
+- `docker-compose.yml`: File-Mount → Directory-Mount (`./data:/app/data`)
+- Bootstrap lokal gebündelt statt CDN (Reverse-Proxy kompatibel)
 
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
