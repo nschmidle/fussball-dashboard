@@ -30,7 +30,7 @@ Alle Daten kommen von der [OpenLigaDB](https://www.openligadb.de/)-API:
 ### Voraussetzungen
 
 - Python 3.12+
-- Node.js 18+ (für Frontend-Entwicklung)
+- Node.js 24+ (für Frontend-Entwicklung)
 - Optional: Docker
 
 ### Schnellstart
@@ -104,7 +104,7 @@ docker build -t fussball-dashboard .
 Das Image liegt auf [ghcr.io](https://ghcr.io) (privat):
 
 ```bash
-echo "$GITHUB_TOKEN" | docker login ghcr.io -u <user> --password-stdin
+echo "$CR_PAT" | docker login ghcr.io -u <user> --password-stdin
 docker pull ghcr.io/nschmidle/fussball-dashboard:latest
 ```
 
@@ -129,6 +129,7 @@ Die Datenbank liegt auf dem Host und wird bei jedem Container-Start automatisch 
 services:
   app:
     image: ghcr.io/nschmidle/fussball-dashboard:latest
+    platform: linux/arm64
     ports:
       - "8080:8080"
     volumes:
