@@ -1,6 +1,7 @@
 services:
   app:
     image: ghcr.io/nschmidle/fussball-dashboard:latest
+    platform: linux/arm64
     ports:
       - "8080:8080"
     volumes:

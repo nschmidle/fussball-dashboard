@@ -2,7 +2,7 @@
 FROM node:20-alpine AS frontend
 WORKDIR /build
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY frontend/ .
 RUN npm run build
 
@@ -12,7 +12,8 @@ WORKDIR /app
 
 # Abhängigkeiten installieren
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && rm -rf /root/.cache/pip
 
 # Backend-Code kopieren
 COPY *.py ./
