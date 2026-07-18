@@ -33,10 +33,23 @@
 - `docker build -t fussball-dashboard .`
 - Keine Lint-/Typecheck-Commands definiert
 
+## Token-Setup
+| Token | Typ | Scope | Verwendung |
+|-------|-----|-------|------------|
+| Fine-grained | `github_pat_*` | Contents + Workflows (nur fussball-dashboard) | Git push (lokal) |
+| Classic PAT | `ghp_*` | write:packages + read:packages | Docker push (manuell) |
+| `GITHUB_TOKEN` | built-in | packages: write | GitHub Actions (automatisch) |
+
+- Fine-grained Token: in `.git/config` (URL-Rewriting, nur dieses Repo)
+- Classic PAT: in `~/.docker/config.json` (global, für docker login)
+- GitHub Actions: nutzt automatisch `GITHUB_TOKEN`
+
 ## Letzte Session (2026-07-18)
 - AGENTS.md vollständig aktualisiert
-- Docker-Image erfolgreich zu ghcr.io gepusht (`ghcr.io/nschmidle/fussball-dashboard:latest`)
-- GitHub-Auth via `gh auth` (Token mit `write:packages`) bestätigt
+- Docker-Image erfolgreich zu ghcr.io gepusht
+- GitHub-Auth via `gh auth` bestätigt
+- Token-Setup konfiguriert: Fine-grained (git) + Classic PAT (docker) + GITHUB_TOKEN (Actions)
+- Workflow `.github/workflows/docker.yml` erstellt (automatischer Docker-Build bei Push zu main)
 
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
