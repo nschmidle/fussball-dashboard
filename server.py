@@ -1,5 +1,8 @@
 import asyncio
+import os
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -11,17 +14,133 @@ from pywebpush import webpush, WebPushException
 from database import get_db, engine
 from models import Match, Goal, PushSubscription
 from schemas import LeagueOut, MatchOut, StandingRow
+from scraper import scrape_all
+
+SCRAPE_HOUR = int(os.environ.get("SCRAPE_HOUR", "8"))
+LIVE_CACHE_TTL = int(os.environ.get("LIVE_CACHE_TTL", "300"))
+LIVE_POLL_INTERVAL = int(os.environ.get("LIVE_POLL_INTERVAL", "120"))
+MATCH_MAX_RUNTIME = timedelta(hours=3)
+SLEEP_CHUNK = 3600
 
 VAPID_PRIVATE = None
 VAPID_PUBLIC = None
 VAPID_CLAIMS = None
+
+_scrape_lock = asyncio.Lock()
+
+
+async def scrape_all_locked():
+    async with _scrape_lock:
+        await scrape_all()
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
+
+
+async def _next_kickoff_utc():
+    async with engine.connect() as conn:
+        row = (
+            await conn.execute(
+                select(func.min(Match.date)).where(
+                    Match.finished == 0, Match.date > _utcnow().isoformat()
+                )
+            )
+        ).scalar()
+    return datetime.fromisoformat(row) if row else None
+
+
+async def _running_matches_exist():
+    now = _utcnow()
+    async with engine.connect() as conn:
+        cnt = (
+            await conn.execute(
+                select(func.count())
+                .select_from(Match)
+                .where(
+                    Match.finished == 0,
+                    Match.date <= now.isoformat(),
+                    Match.date > (now - MATCH_MAX_RUNTIME).isoformat(),
+                )
+            )
+        ).scalar()
+    return bool(cnt)
+
+
+async def daily_scrape_loop():
+    while True:
+        now = _utcnow()
+        target = now.replace(hour=SCRAPE_HOUR, minute=0, second=0, microsecond=0)
+        if target <= now:
+            target += timedelta(days=1)
+        wait_s = (target - now).total_seconds()
+        print(f"[scheduler] next OpenLigaDB update: {target.isoformat()} ({int(wait_s)}s)")
+        await asyncio.sleep(wait_s)
+        try:
+            print("[scheduler] running daily OpenLigaDB update...")
+            await scrape_all_locked()
+        except Exception as e:
+            print(f"[scheduler] daily update failed: {e}")
+
+
+async def live_window_loop():
+    while True:
+        try:
+            if await _running_matches_exist():
+                kickoff = _utcnow()
+                print(f"[live-window] matches already running, entering poll mode")
+            else:
+                kickoff = await _next_kickoff_utc()
+                if kickoff is None:
+                    await asyncio.sleep(SLEEP_CHUNK)
+                    continue
+                remaining = (kickoff - _utcnow()).total_seconds()
+                print(f"[live-window] next match starts {kickoff.isoformat()} ({int(remaining)}s)")
+                while True:
+                    remaining = (kickoff - _utcnow()).total_seconds()
+                    if remaining <= 0:
+                        break
+                    await asyncio.sleep(min(remaining, SLEEP_CHUNK))
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            print(f"[live-window] error: {e}")
+            await asyncio.sleep(60)
+            continue
+
+        print("[live-window] poll mode active")
+        while True:
+            try:
+                await scrape_all_locked()
+            except Exception as e:
+                print(f"[live-window] scrape failed: {e}")
+            try:
+                if not await _running_matches_exist():
+                    break
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                print(f"[live-window] check failed: {e}")
+            await asyncio.sleep(LIVE_POLL_INTERVAL)
+        print("[live-window] no running matches anymore, window closed")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Match.metadata.create_all)
+    tasks = [
+        asyncio.create_task(daily_scrape_loop()),
+        asyncio.create_task(live_window_loop()),
+    ]
     yield
+    for t in tasks:
+        t.cancel()
+    for t in tasks:
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass
     await engine.dispose()
 
 
@@ -251,9 +370,11 @@ async def get_stats(league: str = "bl1", db: AsyncSession = Depends(get_db)):
 
 LIVE_LEAGUES = {"bl1": "1. Bundesliga", "bl2": "2. Bundesliga", "dfb": "DFB-Pokal", "ucl": "Champions League", "uel": "Europa League"}
 
+_live_cache = {"data": None, "ts": 0.0}
+_live_lock = asyncio.Lock()
 
-@app.get("/api/live")
-async def get_live():
+
+async def _fetch_live():
     results = []
     for shortcut, name in LIVE_LEAGUES.items():
         try:
@@ -289,6 +410,22 @@ async def get_live():
                 "goals": goals,
             })
     return results
+
+
+@app.get("/api/live")
+async def get_live():
+    now = time.monotonic()
+    if _live_cache["data"] is not None and now - _live_cache["ts"] < LIVE_CACHE_TTL:
+        return _live_cache["data"]
+    async with _live_lock:
+        now = time.monotonic()
+        if _live_cache["data"] is not None and now - _live_cache["ts"] < LIVE_CACHE_TTL:
+            return _live_cache["data"]
+        print("[live] fetching from OpenLigaDB...")
+        data = await _fetch_live()
+        _live_cache["data"] = data
+        _live_cache["ts"] = time.monotonic()
+        return data
 
 
 # Static frontend als Fallback (muss nach API-Routen sein)
