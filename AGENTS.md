@@ -103,5 +103,10 @@ Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
 - Dashboard zeigt unten `v0.5.1 · Build: <Datum> UTC` (Fallback `dev` ohne Docker); Version angehoben 2.0.0 → **0.5.1**
 - Verifiziert mit lokalem Docker-Build + Container-Test
 
+## Letzte Session (2026-08-21, Teil 3)
+- Navbar: Burger-Menü mobil (Bootstrap `navbar-expand-lg`, Toggle via Vue-`ref` statt Bootstrap-JS – Bundle bleibt ohne bootstrap.bundle.js), Auto-Close bei Routenwechsel
+- Versionszeile unter dem Branding in der Navbar (≈0.72rem, `text-white-50`), Footer-Zeile aus Dashboard.vue entfernt
+- Verifiziert mit lokalem Docker-Build + Container-Test
+
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
