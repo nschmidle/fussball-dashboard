@@ -46,6 +46,10 @@
         </div>
       </div>
     </div>
+
+    <div class="text-center text-muted small mt-4 mb-2">
+      Fußball Dashboard v{{ version }} · Build: {{ buildDate }}
+    </div>
   </div>
 </template>
 
@@ -55,12 +59,15 @@ import { api } from '../api.js'
 
 const leagues = ref([])
 const recent = ref([])
+const version = ref('')
+const buildDate = ref('')
 
 const statCards = ref([])
 
 onMounted(async () => {
   leagues.value = await api('/api/leagues')
   recent.value = await api('/api/matches?limit=20')
+  loadVersion()
 
   const total = leagues.value.reduce((s, l) => s + l.total, 0)
   const finished = leagues.value.reduce((s, l) => s + l.finished, 0)
@@ -71,6 +78,23 @@ onMounted(async () => {
     { value: leagues.value.length, label: 'Ligen' },
   ]
 })
+
+async function loadVersion() {
+  try {
+    const v = await api('/api/version')
+    version.value = v.version
+    if (v.build_date && v.build_date !== 'dev') {
+      const dt = new Date(v.build_date)
+      buildDate.value = dt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+        ' ' + dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' UTC'
+    } else {
+      buildDate.value = 'dev'
+    }
+  } catch {
+    version.value = '?'
+    buildDate.value = '?'
+  }
+}
 
 function pct(l) {
   return l.total ? Math.round(l.finished / l.total * 100) : 0

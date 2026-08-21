@@ -28,6 +28,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
 
+      - name: Set build date
+        run: echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
@@ -35,5 +38,7 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ghcr.io/${{ github.repository }}:latest
+          build-args: |
+            BUILD_DATE=${{ env.BUILD_DATE }}
           provenance: false
           sbom: false

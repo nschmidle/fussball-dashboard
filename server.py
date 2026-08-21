@@ -21,6 +21,7 @@ LIVE_CACHE_TTL = int(os.environ.get("LIVE_CACHE_TTL", "300"))
 LIVE_POLL_INTERVAL = int(os.environ.get("LIVE_POLL_INTERVAL", "120"))
 MATCH_MAX_RUNTIME = timedelta(hours=3)
 SLEEP_CHUNK = 3600
+APP_VERSION = "0.5.1"
 
 VAPID_PRIVATE = None
 VAPID_PUBLIC = None
@@ -144,7 +145,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="Fußball Dashboard", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="Fußball Dashboard", version=APP_VERSION, lifespan=lifespan)
 
 
 def init_vapid():
@@ -208,6 +209,11 @@ async def push_test(db: AsyncSession = Depends(get_db)):
                 await db.delete(s)
                 await db.commit()
     return {"sent": sent}
+
+
+@app.get("/api/version")
+async def get_version():
+    return {"version": APP_VERSION, "build_date": os.environ.get("BUILD_DATE", "dev")}
 
 
 @app.get("/api/leagues", response_model=list[LeagueOut])

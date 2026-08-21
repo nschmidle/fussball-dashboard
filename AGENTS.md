@@ -2,7 +2,7 @@
 
 ## Projekt
 - **Fußball-Dashboard**: FastAPI (Python 3.12) + Vue 3 (Vite 6.4.3)
-- App-Version: 2.0.0
+- App-Version: 0.5.1 (`APP_VERSION` in server.py, angezeigt im Dashboard via `/api/version`)
 - Datenquelle: OpenLigaDB API
 - DB: SQLite (`bundesliga.db`), als Directory-Mount (`./data:/app/data`), Pfad via `DATABASE_PATH` env-Variable konfigurierbar (Default: `/app/bundesliga.db`)
 
@@ -96,6 +96,12 @@ Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
 - Gemeinsamer `asyncio.Lock` (`scrape_all_locked`) um alle Scrape-Aufrufe (Daily ↔ Live-Fenster)
 - Request-Bilanz: ohne Frontend/Spiel nur Start-Scrape + 1×/Tag; während Spielen 30 Req/h im Fenster
 - Dockerfile CMD, `bundesliga_watcher.py` (nur manuell) und Frontend unverändert
+
+## Letzte Session (2026-08-21, Teil 2)
+- Version/Build-Info: `APP_VERSION = "0.5.1"` in server.py + neuer Endpoint `/api/version` (liefert version + build_date)
+- `Dockerfile`: `ARG/ENV BUILD_DATE`; CI (`docker.yml`) setzt `BUILD_DATE=$(date -u ...)` als build-arg
+- Dashboard zeigt unten `v0.5.1 · Build: <Datum> UTC` (Fallback `dev` ohne Docker); Version angehoben 2.0.0 → **0.5.1**
+- Verifiziert mit lokalem Docker-Build + Container-Test
 
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)

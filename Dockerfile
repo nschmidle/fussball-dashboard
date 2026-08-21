@@ -10,6 +10,10 @@ RUN npm run build
 FROM python:3.12-slim
 WORKDIR /app
 
+# Build-Informationen (wird von CI gesetzt)
+ARG BUILD_DATE
+ENV BUILD_DATE=${BUILD_DATE}
+
 # Abhängigkeiten installieren
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
