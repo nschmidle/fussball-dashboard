@@ -86,5 +86,16 @@ Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
 - `docker-compose.yml`: File-Mount → Directory-Mount (`./data:/app/data`)
 - Bootstrap lokal gebündelt statt CDN (Reverse-Proxy kompatibel)
 
+## Letzte Session (2026-08-21)
+- Ziel: OpenLigaDB-Aufrufe auf Minimum reduzieren
+- `scraper.py`: Upsert-Logik – vorhandene Matches werden aktualisiert (`score1`/`score2`/`finished`/`date`) statt übersprungen, Goals per `goal_id` dedupliziert; `run()` → wiederverwendbare `scrape_all()`
+- `server.py`: täglicher Scheduler im lifespan – Scrape um **08:00 UTC** (`SCRAPE_HOUR` env, Default 8, Container bleibt UTC)
+- `server.py`: `/api/live` mit Memory-Cache (`LIVE_CACHE_TTL` env, Default 300s) + `asyncio.Lock` gegen Request-Stampede
+- **UTC-Umstellung**: `matches.date` wird ab jetzt als ISO-UTC mit `+00:00` gespeichert; Ingest konvertiert naive OpenLigaDB-Zeiten (Berlin) via `_to_utc()`; Auto-Migration in `init_db()` konvertiert Bestandsdaten einmalig (idempotent, Suffix-Erkennung verhindert Doppelkonvertierung); Frontend bleibt unverändert (`new Date()` mit Offset zeigt weiter Lokalzeit)
+- **Live-Fenster-Scheduler** (`live_window_loop`): liest nächsten Kickoff aus eigener DB, schläft in max-1h-Chunks dorthin, pollt ab Anstoß alle `LIVE_POLL_INTERVAL` s (Default 120) via `scrape_all()`, stoppt wenn kein Spiel mehr läuft (Anstoß ≤ jetzt < Anstoß+3h); Restart mitten im Fenster → sofortiger Poll
+- Gemeinsamer `asyncio.Lock` (`scrape_all_locked`) um alle Scrape-Aufrufe (Daily ↔ Live-Fenster)
+- Request-Bilanz: ohne Frontend/Spiel nur Start-Scrape + 1×/Tag; während Spielen 30 Req/h im Fenster
+- Dockerfile CMD, `bundesliga_watcher.py` (nur manuell) und Frontend unverändert
+
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
