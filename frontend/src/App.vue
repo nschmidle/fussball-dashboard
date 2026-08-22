@@ -2,12 +2,13 @@
   <div>
     <nav class="navbar navbar-dark bg-dark mb-4">
       <div class="container position-relative">
-        <router-link class="navbar-brand" to="/">
-          ⚽ Fußball Dashboard
-          <span class="d-block text-white-50" style="font-size:0.72rem; line-height:1.1;">
-            v{{ version }} · Build: {{ buildDate }}
-          </span>
-        </router-link>
+        <div class="nav-left">
+          <router-link class="navbar-brand" to="/">⚽ Fußball Dashboard</router-link>
+          <div class="nav-version text-white-50">
+            <div>Version: {{ version }}</div>
+            <div>Build: {{ buildDate }}</div>
+          </div>
+        </div>
         <div class="nav-right d-flex align-items-center gap-2">
           <router-link class="nav-link text-nowrap" :class="{ 'active-link': isActive('/live') }" to="/live">⚡ Live</router-link>
           <button class="navbar-toggler" type="button" @click="open = !open"
@@ -113,5 +114,25 @@ function formatBuildDate(d) {
 .nav-link.active-link {
   color: #fff;
   font-weight: 600;
+}
+
+.nav-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-version {
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+@media (min-width: 768px) {
+  .nav-version {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
 }
 </style>

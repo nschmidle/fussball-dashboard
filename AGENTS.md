@@ -115,4 +115,3 @@ Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
 
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
-- [ ] Navbar: Versionszeile an den rechten Rand unterhalb des schwarzen Bandes (`position:absolute; top:calc(100% + 3px); right:1rem;`, 0.72rem, aus dem Branding herauslösen, Inline-`padding-bottom` der Navbar entfernen); Desktop-Links rechtsbündig (`@media(min-width:992px)`: `flex-grow:1; justify-content:flex-end; margin-left:auto`); geöffnetes Panel überdeckt Version (freigegebenes Dropdown-Verhalten); sw.js bleibt unverändert → Test im privaten Fenster oder mit doppeltem Reload
