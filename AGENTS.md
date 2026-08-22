@@ -111,7 +111,17 @@ Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
 ## Letzte Session (2026-08-21, Teil 4)
 - Navbar-/Versionsiteration getestet (Burger-Panel als Overlay, Version rechts unter dem Band, Desktop-Links rechtsbündig) – vom Nutzer bewusst **verworfen** (`git restore`, nie committet)
 - SW-Fix (v2, network-first für Navigationen) war Teil der Verworfenen und wird **bewusst nicht** nachgebaut → cache-first-Problem (doppelte Reloads nötig) bleibt bestehen
-- Gewünschter Zielzustand ist als TODO unten festgehalten; Plan/CSS-Snippets siehe TODO-Beschreibung
+
+## Letzte Session (2026-08-22)
+- Navbar neu (Commits `fe29b41`, `0e89796`, `09ad912`):
+  - **Burger-Menü bei allen Breitgrößen** (`navbar-expand-lg` entfernt), Panel `.nav-panel` als schwebendes Overlay rechts unter dem Band (`position:absolute; top:calc(100%+6px); z-index:1030`), enthält Dashboard/Spiele/Tabelle/Statistiken
+  - **⚡ Live** steht links neben dem Burger (außerhalb des Panels!), eigene Farben: normal `rgba(255,255,255,.8)`, Hover `#fff`
+  - **Burger-Icon dezent ohne Rahmen**: Bootstrap-Toggler-Klassen entfernt → custom `.burger`-Button – 3 feine Linien (22×2px, gap 5px, `rgba(255,255,255,.8)`, Hover `#fff`), kein Rahmen/Glow in keinem Zustand; Morph zu ✕ bei offenem Panel (`.open`: translateY ±7px + rotate 45°, Mittellinie faded); dezenter Outline nur bei `:focus-visible` (Tastatur)
+  - Outside-Close via Document-Click-Listener (`onDocClick`, Klicks auf `.nav-right`/`.nav-panel` ausgenommen), Auto-Close bei Routenwechsel, Active-Highlight `isActive()` (exakter Pfadvergleich)
+- **Header-Dreiteiler**: Branding links (`.nav-left`-Spalte), Versionsblock zweizeilig (`Version:` / `Build:`) – ≥768px absolut mittig im Band (`translate(-50%,-50%)`, `pointer-events:none`), <768px unter dem Branding; Live+Burger rechts
+- Datenbestand aktualisiert: einmaliger Scrape **Saison 2026/27** (1024 Matches: bl1/bl2 306, bl3 380, dfb 32; UCL/UEL liefert OpenLigaDB noch nichts), UTC-Migration konvertierte 1261 Alt-Dates; Archiv 2025/26 bleibt erhalten
+- Clean-Rebuild verifiziert: `npm ci && npm run build`, `docker build --no-cache`, Container-Smoke-Test (:8081, `/api/version`+`/api/leagues`+Index OK)
+- Navbar-TODOs beides erledigt und aus AGENTS.md entfernt; nur `bl3`-TODO bleibt
 
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
