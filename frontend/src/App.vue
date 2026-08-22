@@ -11,9 +11,9 @@
         </div>
         <div class="nav-right d-flex align-items-center gap-2">
           <router-link class="nav-link text-nowrap" :class="{ 'active-link': isActive('/live') }" to="/live">⚡ Live</router-link>
-          <button class="navbar-toggler" type="button" @click="open = !open"
+          <button class="burger" :class="{ open }" type="button" @click="open = !open"
                   aria-label="Navigation umschalten" :aria-expanded="open">
-            <span class="navbar-toggler-icon"></span>
+            <span></span><span></span><span></span>
           </button>
         </div>
         <div class="collapse nav-panel" :class="{ show: open }">
@@ -109,6 +109,36 @@ function formatBuildDate(d) {
 
 .nav-right .nav-link:hover {
   color: #fff;
+}
+
+.burger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: .45rem .35rem;
+  background: transparent;
+  border: none;
+}
+
+.burger span {
+  width: 22px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, .8);
+  transition: transform .2s ease, opacity .2s ease, background .15s ease;
+}
+
+.burger:hover span {
+  background: #fff;
+}
+
+.burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.open span:nth-child(2) { opacity: 0; }
+.burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.burger:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, .3);
+  outline-offset: 2px;
 }
 
 .nav-link.active-link {
