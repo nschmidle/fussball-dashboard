@@ -4,6 +4,7 @@ Live-Ergebnisse, Tabellen und Statistiken für Bundesliga, Champions League, Eur
 
 ## Features
 
+- **Spieltag** – Startseite: alle Spiele des heutigen Tages je Liga, mit Live-Punkt und Auto-Refresh während laufender Spiele
 - **Dashboard** – Übersicht über alle Ligen, Fortschritt, letzte Spiele
 - **Spiele** – Filterbare Liste nach Liga, Spieltag und Team
 - **Tabelle** – Liga-Tabelle berechnet aus allen Spielen
@@ -37,7 +38,7 @@ Alle Daten kommen von der [OpenLigaDB](https://www.openligadb.de/)-API:
 
 ```bash
 # Abhängigkeiten installieren
-pip install --user fastapi uvicorn sqlalchemy aiosqlite requests pywebpush
+pip install --user -r requirements.txt
 
 # Datenbank füllen
 python3 scraper.py
@@ -71,6 +72,7 @@ Der Server liefert automatisch den aktuellen Build aus `frontend/dist/` aus.
 | `GET /api/standings?league=bl1` | Liga-Tabelle |
 | `GET /api/stats?league=bl1` | Statistiken und Top-Torjäger |
 | `GET /api/live` | Aktuelle Live-Spiele aller Ligen |
+| `GET /api/version` | App-Version und Build-Datum |
 | `GET /api/push/vapid-key` | Öffentlicher VAPID-Key für Push |
 | `POST /api/push/subscribe` | Push-Abo registrieren |
 | `POST /api/push/test` | Test-Push an alle Abos senden |
@@ -175,7 +177,7 @@ networks:
 ├── Dockerfile              ← Multi-Stage Build
 ├── requirements.txt        ← Python-Dependencies
 ├── .dockerignore
-├── server.py              ← FastAPI-App + API-Routen
+├── server.py              ← FastAPI-App + Scheduler + API-Routen
 ├── database.py            ← SQLAlchemy async Engine
 ├── models.py              ← DB-Modelle (Match, Goal, PushSubscription)
 ├── schemas.py             ← Pydantic-Response-Schemata
@@ -187,6 +189,7 @@ networks:
 │   │   ├── main.js        ← Router
 │   │   ├── api.js         ← API-Helper
 │   │   └── views/
+│   │       ├── SpieltagView.vue  ← Startseite: Spiele des Tages + Scrape-Historie
 │   │       ├── Dashboard.vue
 │   │       ├── MatchesView.vue
 │   │       ├── StandingsView.vue
@@ -205,8 +208,15 @@ networks:
 
 ## Daten aktualisieren
 
+Manuell:
+
 ```bash
 python3 scraper.py
 ```
 
-Überschreibt keine vorhandenen Einträge (INSERT OR IGNORE). Zum kompletten Neuladen einfach `data/bundesliga.db` löschen und erneut ausführen.
+Automatisch (im Server-Prozess):
+
+- täglich um 08:00 UTC (`SCRAPE_HOUR`, konfigurierbar)
+- während laufender Spiele alle 120 s (`LIVE_POLL_INTERVAL`, Live-Fenster = Anstoß bis ca. 3 h danach)
+
+Der Import ist ein **Upsert**: Ergebnisse, Anstoßzeiten und Status bestehender Spiele werden aktualisiert, neue Spiele angelegt, Tore per `goal_id` dedupliziert. Die letzten 20 Scrape-Läufe zeigt die Spieltag-Seite (bzw. `GET /api/scrape-history`). Zum kompletten Neuladen `bundesliga.db` löschen und erneut ausführen.
