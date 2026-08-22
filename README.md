@@ -67,6 +67,7 @@ Der Server liefert automatisch den aktuellen Build aus `frontend/dist/` aus.
 | `GET /api/matchdays?league=bl1` | Verfügbare Spieltage |
 | `GET /api/matches?league=bl1&limit=50` | Gefilterte Spiele |
 | `GET /api/spieltag` | Spiele des heutigen Tages (Berlin), je Liga gruppiert |
+| `GET /api/scrape-history` | Letzte 20 Scrape-Läufe (Zeit, Auslöser, Dauer, Statistik) |
 | `GET /api/standings?league=bl1` | Liga-Tabelle |
 | `GET /api/stats?league=bl1` | Statistiken und Top-Torjäger |
 | `GET /api/live` | Aktuelle Live-Spiele aller Ligen |

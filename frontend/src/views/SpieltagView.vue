@@ -27,6 +27,34 @@
         </table>
       </div>
     </div>
+
+    <details class="card mt-3">
+      <summary class="card-header d-flex justify-content-between align-items-center" style="cursor:pointer">
+        <span>Scrape-Historie</span>
+        <span class="badge bg-secondary">{{ history.length }}/20</span>
+      </summary>
+      <div v-if="!history.length" class="card-body text-muted small">
+        Noch keine Scrape-Läufe seit Serverstart.
+      </div>
+      <div v-else class="table-responsive">
+        <table class="table table-sm mb-0 spieltag-table">
+          <tbody>
+            <tr v-for="(h, i) in history" :key="i">
+              <td class="text-nowrap">{{ formatTs(h.ts) }}</td>
+              <td><span class="badge" :class="h.trigger === 'live' ? 'bg-danger' : 'bg-secondary'">{{ h.trigger }}</span></td>
+              <td class="text-nowrap text-end pe-3">{{ h.duration_s }} s</td>
+              <template v-if="h.error">
+                <td colspan="2" class="text-danger">Fehler: {{ h.error }}</td>
+              </template>
+              <template v-else>
+                <td>{{ h.total }} Spiele</td>
+                <td :class="h.updated ? 'text-success fw-bold' : ''">Δ {{ h.updated }}</td>
+              </template>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
   </div>
 </template>
 
@@ -37,6 +65,7 @@ import { api } from '../api.js'
 const POLL_MS = 5000
 
 const groups = ref([])
+const history = ref([])
 const loaded = ref(false)
 const now = ref(new Date())
 let pollTimer = null
@@ -52,7 +81,12 @@ onUnmounted(() => {
 
 async function refresh() {
   try {
-    groups.value = await api('/api/spieltag')
+    const [g, h] = await Promise.all([
+      api('/api/spieltag'),
+      api('/api/scrape-history'),
+    ])
+    groups.value = g
+    history.value = h
   } catch {}
   loaded.value = true
 }
@@ -70,6 +104,11 @@ function anyLive() {
 function formatTime(d) {
   if (!d) return ''
   return new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatTs(d) {
+  if (!d) return ''
+  return new Date(d).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 function isLive(m) {

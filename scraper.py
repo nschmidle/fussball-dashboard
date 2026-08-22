@@ -151,7 +151,7 @@ async def scrape_all():
             except Exception as e:
                 print(f"Error: {e}")
     print(f"\nDone. {total} matches, {total_updated} updated")
-    return total
+    return total, total_updated
 
 
 async def run():

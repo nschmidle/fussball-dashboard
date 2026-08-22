@@ -1,6 +1,7 @@
 import asyncio
 import os
 import time
+from collections import deque
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -28,11 +29,29 @@ VAPID_PUBLIC = None
 VAPID_CLAIMS = None
 
 _scrape_lock = asyncio.Lock()
+_scrape_history = deque(maxlen=20)
 
 
-async def scrape_all_locked():
+async def scrape_all_locked(trigger="manual"):
     async with _scrape_lock:
-        await scrape_all()
+        t0 = time.monotonic()
+        try:
+            total, updated = await scrape_all()
+        except Exception as e:
+            _scrape_history.appendleft({
+                "ts": _utcnow().isoformat(),
+                "trigger": trigger,
+                "duration_s": round(time.monotonic() - t0, 2),
+                "error": str(e),
+            })
+            raise
+        _scrape_history.appendleft({
+            "ts": _utcnow().isoformat(),
+            "trigger": trigger,
+            "duration_s": round(time.monotonic() - t0, 2),
+            "total": total,
+            "updated": updated,
+        })
 
 
 def _utcnow():
@@ -79,7 +98,7 @@ async def daily_scrape_loop():
         await asyncio.sleep(wait_s)
         try:
             print("[scheduler] running daily OpenLigaDB update...")
-            await scrape_all_locked()
+            await scrape_all_locked("daily")
         except Exception as e:
             print(f"[scheduler] daily update failed: {e}")
 
@@ -112,7 +131,7 @@ async def live_window_loop():
         print("[live-window] poll mode active")
         while True:
             try:
-                await scrape_all_locked()
+                await scrape_all_locked("live")
             except Exception as e:
                 print(f"[live-window] scrape failed: {e}")
             try:
@@ -479,6 +498,11 @@ async def get_spieltag(db: AsyncSession = Depends(get_db)):
             ],
         ))
     return groups
+
+
+@app.get("/api/scrape-history")
+async def get_scrape_history():
+    return list(_scrape_history)
 
 
 # Static frontend als Fallback (muss nach API-Routen sein)
