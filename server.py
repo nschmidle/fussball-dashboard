@@ -13,15 +13,15 @@ from pywebpush import webpush, WebPushException
 
 from database import get_db, engine
 from models import Match, Goal, PushSubscription
-from schemas import LeagueOut, MatchOut, StandingRow
-from scraper import scrape_all
+from schemas import LeagueOut, MatchOut, StandingRow, SpieltagGroup
+from scraper import BERLIN, LEAGUES, scrape_all
 
 SCRAPE_HOUR = int(os.environ.get("SCRAPE_HOUR", "8"))
 LIVE_CACHE_TTL = int(os.environ.get("LIVE_CACHE_TTL", "300"))
 LIVE_POLL_INTERVAL = int(os.environ.get("LIVE_POLL_INTERVAL", "120"))
 MATCH_MAX_RUNTIME = timedelta(hours=3)
 SLEEP_CHUNK = 3600
-APP_VERSION = "0.5.1"
+APP_VERSION = "0.5.2"
 
 VAPID_PRIVATE = None
 VAPID_PUBLIC = None
@@ -432,6 +432,53 @@ async def get_live():
         _live_cache["data"] = data
         _live_cache["ts"] = time.monotonic()
         return data
+
+
+@app.get("/api/spieltag", response_model=list[SpieltagGroup])
+async def get_spieltag(db: AsyncSession = Depends(get_db)):
+    # "Heute" als Kalendertag Europe/Berlin, Grenzen als UTC-ISO-Vergleich
+    now_berlin = _utcnow().astimezone(BERLIN)
+    start = now_berlin.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+    end = start + timedelta(days=1)
+    rows = (
+        await db.execute(
+            select(Match)
+            .where(Match.date >= start.isoformat(), Match.date < end.isoformat())
+            .order_by(Match.date)
+        )
+    ).scalars().all()
+
+    by_league: dict[str, list[Match]] = {}
+    for m in rows:
+        by_league.setdefault(m.league_shortcut, []).append(m)
+
+    groups = []
+    for sc in LEAGUES:
+        ms = by_league.get(sc, [])
+        if not ms:
+            continue
+        groups.append(SpieltagGroup(
+            league_shortcut=sc,
+            league_name=ms[0].league_name or LEAGUES[sc],
+            matches=[
+                MatchOut(
+                    id=m.id,
+                    match_id=m.match_id,
+                    league_shortcut=m.league_shortcut,
+                    league_name=m.league_name,
+                    season=m.season,
+                    matchday=m.matchday,
+                    date=m.date,
+                    team1=m.team1,
+                    team2=m.team2,
+                    score1=m.score1,
+                    score2=m.score2,
+                    finished=bool(m.finished),
+                )
+                for m in ms
+            ],
+        ))
+    return groups
 
 
 # Static frontend als Fallback (muss nach API-Routen sein)

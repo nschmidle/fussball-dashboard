@@ -4,13 +4,15 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import App from './App.vue'
 
 import Dashboard from './views/Dashboard.vue'
+import SpieltagView from './views/SpieltagView.vue'
 import MatchesView from './views/MatchesView.vue'
 import StandingsView from './views/StandingsView.vue'
 import StatsView from './views/StatsView.vue'
 import LiveView from './views/LiveView.vue'
 
 const routes = [
-  { path: '/', component: Dashboard },
+  { path: '/', component: SpieltagView },
+  { path: '/dashboard', component: Dashboard },
   { path: '/matches', component: MatchesView },
   { path: '/standings', component: StandingsView },
   { path: '/stats', component: StatsView },

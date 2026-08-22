@@ -26,6 +26,12 @@ class MatchOut(BaseModel):
     goal_count: int = 0
 
 
+class SpieltagGroup(BaseModel):
+    league_shortcut: str
+    league_name: str
+    matches: list[MatchOut]
+
+
 class StandingRow(BaseModel):
     pos: int
     team: str

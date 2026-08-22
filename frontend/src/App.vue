@@ -18,7 +18,8 @@
         </div>
         <div class="collapse nav-panel" :class="{ show: open }">
           <div class="navbar-nav">
-            <router-link class="nav-link" :class="{ 'active-link': isActive('/') }" to="/">Dashboard</router-link>
+            <router-link class="nav-link" :class="{ 'active-link': isActive('/') }" to="/">Spieltag</router-link>
+            <router-link class="nav-link" :class="{ 'active-link': isActive('/dashboard') }" to="/dashboard">Dashboard</router-link>
             <router-link class="nav-link" :class="{ 'active-link': isActive('/matches') }" to="/matches">Spiele</router-link>
             <router-link class="nav-link" :class="{ 'active-link': isActive('/standings') }" to="/standings">Tabelle</router-link>
             <router-link class="nav-link" :class="{ 'active-link': isActive('/stats') }" to="/stats">Statistiken</router-link>
@@ -78,7 +79,7 @@ function formatBuildDate(d) {
   if (!d || d === 'dev') return 'dev'
   const dt = new Date(d)
   return dt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
-    ' ' + dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' UTC'
+    ' ' + dt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 }
 </script>
 
