@@ -108,5 +108,11 @@ Beide Scripts liegen in `~/.local/bin/` und nutzen `pass` als Backend.
 - Versionszeile unter dem Branding in der Navbar (≈0.72rem, `text-white-50`), Footer-Zeile aus Dashboard.vue entfernt
 - Verifiziert mit lokalem Docker-Build + Container-Test
 
+## Letzte Session (2026-08-21, Teil 4)
+- Navbar-/Versionsiteration getestet (Burger-Panel als Overlay, Version rechts unter dem Band, Desktop-Links rechtsbündig) – vom Nutzer bewusst **verworfen** (`git restore`, nie committet)
+- SW-Fix (v2, network-first für Navigationen) war Teil der Verworfenen und wird **bewusst nicht** nachgebaut → cache-first-Problem (doppelte Reloads nötig) bleibt bestehen
+- Gewünschter Zielzustand ist als TODO unten festgehalten; Plan/CSS-Snippets siehe TODO-Beschreibung
+
 ## TODOs
 - [ ] `bl3` zu `LIVE_LEAGUES` in server.py hinzufügen (falls Live-Support gewünscht)
+- [ ] Navbar: Versionszeile an den rechten Rand unterhalb des schwarzen Bandes (`position:absolute; top:calc(100% + 3px); right:1rem;`, 0.72rem, aus dem Branding herauslösen, Inline-`padding-bottom` der Navbar entfernen); Desktop-Links rechtsbündig (`@media(min-width:992px)`: `flex-grow:1; justify-content:flex-end; margin-left:auto`); geöffnetes Panel überdeckt Version (freigegebenes Dropdown-Verhalten); sw.js bleibt unverändert → Test im privaten Fenster oder mit doppeltem Reload
