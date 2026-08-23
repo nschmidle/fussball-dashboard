@@ -17,7 +17,7 @@ from models import Match, Goal, PushSubscription
 from schemas import LeagueOut, MatchOut, StandingRow, SpieltagGroup
 from scraper import BERLIN, LEAGUES, scrape_all
 
-SCRAPE_HOUR = int(os.environ.get("SCRAPE_HOUR", "8"))
+SCRAPE_HOUR_UTC = int(os.environ.get("SCRAPE_HOUR_UTC", "6"))
 LIVE_CACHE_TTL = int(os.environ.get("LIVE_CACHE_TTL", "300"))
 LIVE_POLL_INTERVAL = int(os.environ.get("LIVE_POLL_INTERVAL", "120"))
 MATCH_MAX_RUNTIME = timedelta(hours=3)
@@ -90,11 +90,12 @@ async def _running_matches_exist():
 async def daily_scrape_loop():
     while True:
         now = _utcnow()
-        target = now.replace(hour=SCRAPE_HOUR, minute=0, second=0, microsecond=0)
+        target = now.replace(hour=SCRAPE_HOUR_UTC, minute=0, second=0, microsecond=0)
         if target <= now:
             target += timedelta(days=1)
         wait_s = (target - now).total_seconds()
-        print(f"[scheduler] next OpenLigaDB update: {target.isoformat()} ({int(wait_s)}s)")
+        berlin = target.astimezone(BERLIN).strftime("%H:%M")
+        print(f"[scheduler] next OpenLigaDB update: {target.isoformat()} (= {berlin} Europe/Berlin) ({int(wait_s)}s)")
         await asyncio.sleep(wait_s)
         try:
             print("[scheduler] running daily OpenLigaDB update...")

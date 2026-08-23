@@ -7,6 +7,7 @@
 
 ## Dev-Commands
 ```bash
+export DATABASE_PATH=./bundesliga.db  # lokal nötig: Default /app/bundesliga.db existiert nur im Container
 pip install --user -r requirements.txt
 python3 scraper.py                    # DB füllen/aktualisieren (Upsert, kein Reset)
 python3 server.py                     # Backend auf :8080 (uvicorn --reload)
@@ -18,15 +19,15 @@ Verifizierungsworkflow ohne Tests: `npm run build` + `docker build` + Container-
 ## Architektur & Fallstricke
 - Ein FastAPI-Prozess macht alles: API + Scheduler (im `lifespan`) + statisches Frontend. Der Mount auf `/` (`server.py`, unten) muss **nach** den API-Routen bleiben.
 - **OpenLigaDB-Aufrufe minimieren** ist Designziel:
-  - Täglicher Scrape um 08:00 UTC (`SCRAPE_HOUR`, Default 8)
+  - Täglicher Scrape um `SCRAPE_HOUR_UTC` (Default 6 = 06:00 UTC ≙ 08:00 MESZ / 07:00 MEZ – lokale Ausführungszeit verschiebt sich mit DST)
   - Live-Fenster-Loop (`live_window_loop`): pollt nur während laufender Spiele alle `LIVE_POLL_INTERVAL` s (Default 120); Fenster = Anstoß ≤ jetzt < Anstoß+3h
   - Alle Scrape-Aufrufe ausschließlich über `scrape_all_locked()` (gemeinsamer `asyncio.Lock`) – keine zusätzlichen Polling-/Fetch-Logik einbauen
 - **UTC-Konvention**: `matches.date` wird als ISO-UTC mit `+00:00` gespeichert; naive OpenLigaDB-Zeiten sind Europe/Berlin und werden via `_to_utc()` konvertiert. Migration in `init_db()` ist idempotent (erkennt anhand tzinfo-Suffix). Frontend rendrt Lokalzeit via `new Date()`.
 - `scraper.py`: Upsert-Logik – bestehende Matches werden aktualisiert statt übersprungen, Goals per `goal_id` dedupliziert; `scrape_all()` liefert `(total, total_updated)`.
 - **Startseite = Spieltag**: Route `/` rendert `SpieltagView`, Dashboard liegt unter `/dashboard`. Endpoint `/api/spieltag` liefert Spiele des heutigen Kalendertags (Mitternacht Europe/Berlin als UTC-Fenster), je Liga gruppiert in fester Reihenfolge.
 - **Scrape-Historie** (`GET /api/scrape-history`): Ringpuffer `deque(maxlen=20)` in `scrape_all_locked(trigger)` – Einträge mit UTC-Zeitstempel, Dauer, total/updated, Trigger `daily`/`live`. Rein RAM-basiert: Nach Neustart leer; der Docker-CMD-Start-Scrape läuft im eigenen Prozess vor uvicorn und taucht nie auf.
-- Ligen: `bl1 bl2 bl3 dfb ucl uel` werden gescrapt, aber `LIVE_LEAGUES` (server.py:396) enthält **kein `bl3`** → `/api/live` liefert bl3 nicht.
-- Env-Variablen: `DATABASE_PATH` (Default `/app/bundesliga.db`), `SCRAPE_HOUR=8`, `LIVE_CACHE_TTL=300`, `LIVE_POLL_INTERVAL=120`, `BUILD_DATE` (nur CI).
+- Ligen: `bl1 bl2 bl3 dfb ucl uel` werden gescrapt, aber `LIVE_LEAGUES` (in server.py) enthält **kein `bl3`** → `/api/live` liefert bl3 nicht.
+- Env-Variablen: `DATABASE_PATH` (Default `/app/bundesliga.db`), `SCRAPE_HOUR_UTC=6`, `LIVE_CACHE_TTL=300`, `LIVE_POLL_INTERVAL=120`, `BUILD_DATE` (nur CI).
 
 ## Frontend-Konventionen
 - Bootstrap nur als CSS; **kein bootstrap.bundle.js** – interaktive Widgets (Burger-Menü in App.vue) mit Vue-Refs umsetzen, kein Bootstrap-JS nachrüsten.

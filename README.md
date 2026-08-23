@@ -137,6 +137,9 @@ services:
 
     environment:
       - DATABASE_PATH=/app/data/bundesliga.db
+      - SCRAPE_HOUR_UTC=6         # täglicher Scrape: 06:00 UTC ≙ 08:00 MESZ / 07:00 MEZ
+      - LIVE_CACHE_TTL=300        # Cache /api/live in Sekunden
+      - LIVE_POLL_INTERVAL=120    # Poll-Intervall im Live-Fenster in Sekunden
     volumes:
       - ./data:/app/data
 
@@ -216,7 +219,7 @@ python3 scraper.py
 
 Automatisch (im Server-Prozess):
 
-- täglich um 08:00 UTC (`SCRAPE_HOUR`, konfigurierbar)
+- täglich um `SCRAPE_HOUR_UTC` (Default `6`): 06:00 UTC ≙ 08:00 deutscher Sommerzeit bzw. 07:00 Winterzeit
 - während laufender Spiele alle 120 s (`LIVE_POLL_INTERVAL`, Live-Fenster = Anstoß bis ca. 3 h danach)
 
 Der Import ist ein **Upsert**: Ergebnisse, Anstoßzeiten und Status bestehender Spiele werden aktualisiert, neue Spiele angelegt, Tore per `goal_id` dedupliziert. Die letzten 20 Scrape-Läufe zeigt die Spieltag-Seite (bzw. `GET /api/scrape-history`). Zum kompletten Neuladen `bundesliga.db` löschen und erneut ausführen.

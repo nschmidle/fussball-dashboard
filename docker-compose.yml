@@ -6,6 +6,9 @@ services:
 
     environment:
       - DATABASE_PATH=/app/data/bundesliga.db
+      - SCRAPE_HOUR_UTC=6         # täglicher Scrape: 06:00 UTC ≙ 08:00 MESZ / 07:00 MEZ
+      - LIVE_CACHE_TTL=300        # Cache /api/live in Sekunden
+      - LIVE_POLL_INTERVAL=120    # Poll-Intervall im Live-Fenster in Sekunden
     volumes:
       - ./data:/app/data
 
